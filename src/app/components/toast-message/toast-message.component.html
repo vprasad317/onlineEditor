@@ -1,0 +1,15 @@
+<div class="position-fixed bottom-0 right-0 p-3" style="z-index: 5; right: 0; bottom: 0;" *ngIf="!noData">
+    <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-delay="2000" [ngClass]="showToast ? 'show' :'hide'">
+      <div class="toast-body text-white bg-success">
+        Template Saved Successfully !
+      </div>
+    </div>
+  </div>
+
+  <div class="position-fixed bottom-0 right-0 p-3" style="z-index: 5; right: 0; bottom: 0;" *ngIf="noData">
+    <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true" data-delay="2000" [ngClass]="noData ? 'show' :'hide'">
+      <div class="toast-body text-white bg-danger">
+        No Data Available !
+      </div>
+    </div>
+  </div>
