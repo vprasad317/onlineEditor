@@ -4,7 +4,6 @@ import { BrowserModule } from '@angular/platform-browser';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { MaterialModule } from './material/material.module';
 import { PrepareTemplateComponent } from './components/prepare-template/prepare-template.component';
 import { NgDragDropModule } from 'ng-drag-drop';
 import { HttpClientModule } from '@angular/common/http';
@@ -25,7 +24,6 @@ import { ToastMessageComponent } from './components/toast-message/toast-message.
     FormsModule,
     ReactiveFormsModule,
     BrowserAnimationsModule,
-    MaterialModule,
     QuillModule.forRoot(),
     NgDragDropModule.forRoot()
   ],
