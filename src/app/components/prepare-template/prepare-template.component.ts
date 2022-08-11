@@ -1,121 +1,129 @@
-import { Component, OnInit } from '@angular/core';
-import { FormControl, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-import { DraggableItem } from 'src/app/model/data';
-import { AppServiceService } from 'src/app/services/app-service.service';
+import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { fabric } from 'fabric';
+import { SavedData } from 'src/app/model/data';
 
 @Component({
   selector: 'app-prepare-template',
   templateUrl: './prepare-template.component.html',
   styleUrls: ['./prepare-template.component.scss']
 })
-export class PrepareTemplateComponent implements OnInit {
+export class PrepareTemplateComponent implements OnInit, AfterViewInit {
 
-  draggableItem: any = DraggableItem;
-  droppedItems: any = [];
-  htmlContent = "";
-  enablePopup = false;
-  draggedElement: any = [];
-  imageCtrl = new FormControl();
-  templateNameCtrl = new FormControl('', Validators.required);
-  file: any;
-  validFile = true;
-  loading = false;
-  showToast = false;
-  noData = false;
-  templateData = {name: '', value: []};
-  savedTemplate: any;
-
-  constructor(private service: AppServiceService, private router: Router) { 
-    this.imageCtrl.valueChanges.subscribe(data => {
-      this.draggedElement.dragData.url = data;
-    })
+  @ViewChild('htmlCanvas') htmlCanvas: ElementRef;
+  private canvas: fabric.Canvas;
+  public textString: string;
+  public searchString: string;
+  public url: string | ArrayBuffer = '';
+  public savedTemplate;
+  size = {
+    width: '400',
+    height: '280'
   }
 
+  constructor() {}
   ngOnInit(): void {
-    this.savedTemplate = JSON.parse(localStorage.getItem('savedTemplate') || '[]');
-  }
-
-  onControlDrop(evt: any): void {
-    this.draggedElement = evt.dragData;
-    if(evt.dragData.type == 'image') {
-      this.enablePopup = true;
-    } else {
-      this.updateDroppedElement(this.draggedElement);
-    }
-    
-
-  }
-
-  onSelectFile(evt: any): void {
-    this.file = evt.target.files[0];
-    if (this.file.type == 'image/jpeg' || this.file.type == 'image/png') {
-      this.uploadImage();
-    } else {
-      this.validFile = false;
-    }
     
   }
 
-  uploadImage(): void {
-    this.loading = true;
-    this.service.upload(this.file).subscribe(response => {
-      this.enablePopup = false;
-      this.loading = false;
-      if (Object.keys(response) && Object.keys(response).length) {
-        const imgData = {
-          url: response.fileUrl,
-          name: 'Image',
-          type: 'image',
-          inputType: 'image'
-        };
-        this.updateDroppedElement(imgData);
-      }
-    }, err => {
-      this.loading = false;
-      this.validFile = false;
-    })
+  ngAfterViewInit(): void {
+    this.canvas = new fabric.Canvas(this.htmlCanvas.nativeElement, {
+      hoverCursor: 'pointer',
+      selection: true,
+      selectionBorderColor: 'blue',
+      isDrawingMode: false
+    });
+
+    this.canvas.setWidth(this.size.width);
+    this.canvas.setHeight(this.size.height);
   }
 
-  updateDroppedElement(element: any): void {
-    this.droppedItems.push(element);
+  
+  addText(): void {
+    if (this.textString) {
+      const text = new fabric.IText(this.textString, {
+        left: 10,
+        top: 10,
+        fontFamily: 'helvetica',
+        angle: 0,
+        fill: '#000000',
+        scaleX: 0.5,
+        scaleY: 0.5,
+        fontWeight: '',
+        hasRotatingPoint: true
+      });
+
+      //this.extend(text, this.randomId());
+      this.canvas.add(text);
+      this.selectItemAfterAdded(text);
+      this.textString = '';
+    }
   }
 
-  saveTemplate(): void {
+  addImageOnCanvas(url): void {
+    if (url) {
+      fabric.Image.fromURL(url, (image) => {
+        image.set({
+          left: 10,
+          top: 10,
+          angle: 0,
+          padding: 10,
+          cornerSize: 10,
+          hasRotatingPoint: true
+        });
+        image.scaleToWidth(200);
+        image.scaleToHeight(200);
+        this.extend(image, this.randomId());
+        this.canvas.add(image);
+        this.selectItemAfterAdded(image);
+      });
+    }
+  }
+
+  readUrl(event): void {
+    if (event.target.files && event.target.files[0]) {
+      const reader = new FileReader();
+      reader.onload = (readerEvent) => {
+        this.url = readerEvent.target.result;
+      };
+      reader.readAsDataURL(event.target.files[0]);
+    }
+  }
+
+  removeWhite(url): void {
+    this.url = '';
+  }
+
+  selectItemAfterAdded(obj) {
+    this.canvas.discardActiveObject().renderAll();
+    this.canvas.setActiveObject(obj);
+  }
+
+  extend(obj, id) {
+    obj.toObject = ((toObject) => {
+      return function() {
+        return fabric.util.object.extend(toObject.call(this), {
+          id
+        });
+      };
+    })(obj.toObject);
+  }
+
+  randomId() {
+    return Math.floor(Math.random() * 999999) + 1;
+  }
+
+  saveCanvasToJSON(): void {
     let dataParams = [];
-    this.draggedElement.textData = this.htmlContent;
-    let storedData = JSON.parse(localStorage.getItem('savedTemplate') || '[]');
+    const json: any = JSON.stringify(this.canvas);
 
-    if (this.droppedItems.length) {
-      this.templateData = {
-        name: 'T' + parseInt(storedData.length + 1),
-        value: this.droppedItems
-      }
-      dataParams.push(this.templateData);
-      const dataToStore = [...storedData, ...dataParams];
-      this.showToast = true;
-      this.droppedItems = [];
-      setTimeout(() => {
-        localStorage.setItem('savedTemplate', JSON.stringify(dataToStore));
-        this.showToast = false;
-        window.location.reload();
-      }, 2000)
-    } else {}
+    localStorage.setItem('SavedTemplate', json);
+    window.location.reload();
   }
 
-  loadTemplate(formValue: any): void {
-    if(formValue !='') {
-      try {
-       this.droppedItems = this.savedTemplate.filter((ele: any) => ele.name == formValue)[0].value; 
-        this.htmlContent = this.droppedItems[0].textData;
-        this.noData = false;
-      } catch(e) {
-        this.droppedItems = [];
-        this.noData = true;
-        setTimeout(() => {
-          this.noData = false;
-        }, 2000)
-      }
+  loadTemplate(): void {
+    if (this.searchString) {
+      const json = JSON.parse(localStorage.getItem('SavedTemplate'));
+      this.savedTemplate = json.objects;
     }
   }
 }

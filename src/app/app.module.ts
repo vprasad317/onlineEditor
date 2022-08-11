@@ -11,6 +11,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { QuillModule } from 'ngx-quill';
 import { ToastMessageComponent } from './components/toast-message/toast-message.component';
 
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -24,6 +25,7 @@ import { ToastMessageComponent } from './components/toast-message/toast-message.
     FormsModule,
     ReactiveFormsModule,
     BrowserAnimationsModule,
+    
     QuillModule.forRoot(),
     NgDragDropModule.forRoot()
   ],
